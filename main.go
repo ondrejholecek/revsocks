@@ -15,6 +15,7 @@ import (
 
 var agentpassword string
 var socksdebug bool
+var single bool
 
 func main() {
 
@@ -32,12 +33,13 @@ func main() {
 	optpassword := flag.String("pass", "", "Connect password")
 	optquiet := flag.Bool("q",false,"Be quiet")
 	recn := flag.Int("recn", 3, "reconnection limit")
-
 	rect := flag.Int("rect", 30, "reconnection delay")
 	fsocksdebug := flag.Bool("debug", false, "display debug info")
 	version := flag.Bool("version", false, "version information")
-	flag.Usage = func() {
 
+	flag.BoolVar(&single, "single", false, "Allow only single connection (default false)")
+
+	flag.Usage = func() {
 		fmt.Println("revsocks - reverse socks5 server/client")
 		fmt.Println("")
 		flag.PrintDefaults()

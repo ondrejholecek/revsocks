@@ -23,7 +23,7 @@ func listenForAgents(tlslisten bool, address string, clients string, certificate
 	var cer tls.Certificate
 	var session *yamux.Session
 	var sessions []*yamux.Session
-	var ln net.Listener
+	var ln, socksln net.Listener
 
 	log.Printf("Will start listening for clients on %s", clients)
 	if tlslisten {
@@ -107,32 +107,41 @@ func listenForAgents(tlslisten bool, address string, clients string, certificate
 				continue
 			}
 			sessions = append(sessions, session)
-			go listenForClients(agentstr, listenstr[0], portnum+portinc, session)
+			go listenForClients(agentstr, listenstr[0], portnum+portinc, session, &socksln)
 			portinc = portinc + 1
+
+			// if single connection flag is enabled, wait for main session to close before continuing
+			// + close the socks5 listener and reuse the same sock5 listening port next time
+			if single {
+				<-session.CloseChan()
+				socksln.Close()
+				sessions = sessions[:0]
+				portinc = 0
+			}
 		}
 	}
 	return nil
 }
 
 // Catches local clients and connects to yamux
-func listenForClients(agentstr string, listen string, port int, session *yamux.Session) error {
-	var ln net.Listener
+func listenForClients(agentstr string, listen string, port int, session *yamux.Session, ln *net.Listener) error {
 	var address string
 	var err error
 	portinc := port
 	for {
 		address = fmt.Sprintf("%s:%d", listen, portinc)
 		log.Printf("[%s] Waiting for clients on %s", agentstr, address)
-		ln, err = net.Listen("tcp", address)
+		*ln, err = net.Listen("tcp", address)
 		if err != nil {
 			log.Printf("[%s] Error listening on %s: %v", agentstr, address, err)
+			if single { os.Exit(1) } // rather exit than choose different socks5 listening port
 			portinc = portinc + 1
 		} else {
 			break
 		}
 	}
 	for {
-		conn, err := ln.Accept()
+		conn, err := (*ln).Accept()
 		if err != nil {
 			log.Printf("[%s] Error accepting on %s: %v", agentstr, address, err)
 			return err

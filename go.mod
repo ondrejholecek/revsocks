@@ -7,6 +7,7 @@ require (
 	github.com/hashicorp/yamux v0.1.1
 	github.com/kost/dnstun v0.0.0-20230410032621-516d32ae1845
 	github.com/kost/go-ntlmssp v0.0.0-20190601005913-a22bdd33b2a4
+	golang.org/x/net v0.7.0
 )
 
 require (
@@ -18,7 +19,6 @@ require (
 	github.com/rs/xid v1.4.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
 	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/tools v0.3.0 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect

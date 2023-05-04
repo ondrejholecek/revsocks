@@ -15,6 +15,7 @@ import (
 
 var agentpassword string
 var socksdebug bool
+var limiter socksDestinationLimiter
 
 func main() {
 
@@ -23,6 +24,7 @@ func main() {
 	socks := flag.String("socks", "127.0.0.1:1080", "socks address:port")
 	connect := flag.String("connect", "", "connect address:port")
 	proxy := flag.String("proxy", "", "proxy address:port")
+	limit := flag.String("limit", "", "Limit destinations (unlimited by default)")
 	optdnslisten := flag.String("dnslisten", "", "Where should DNS server listen")
 	optdnsdelay := flag.String("dnsdelay", "", "Delay/sleep time between requests (200ms by default)")
 	optdnsdomain := flag.String("dns", "", "DNS domain to use for DNS tunneling")
@@ -122,6 +124,16 @@ func main() {
 		} else {
 			useragent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko"
 		}
+
+		if *limit != "" {
+			for _, ad := range strings.Split(*limit, ",") {
+				log.Println("Allowed destination " + ad)
+				limiter.AddAllowed(ad)
+			}
+		} else {
+			log.Println("All destinations allowed")
+		}
+
 		//log.Fatal(connectForSocks(*connect,*proxy))
 		if *recn > 0 {
 			for i := 1; i <= *recn; i++ {

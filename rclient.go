@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"golang.org/x/net/context"
 
 	ntlmssp "github.com/kost/go-ntlmssp"
 )
@@ -179,7 +180,7 @@ func connectviaproxy(proxyaddr string, connectaddr string) net.Conn {
 
 func connectForSocks(tlsenable bool, address string, proxy string) error {
 	var session *yamux.Session
-	server, err := socks5.New(&socks5.Config{})
+	server, err := socks5.New(&socks5.Config{Rules: &limiter})
 	if err != nil {
 		return err
 	}
@@ -255,4 +256,28 @@ func connectForSocks(tlsenable bool, address string, proxy string) error {
 			}
 		}()
 	}
+}
+
+
+type socksDestinationLimiter struct {
+	allowed []string
+}
+
+func (t *socksDestinationLimiter) AddAllowed(dst string) {
+	t.allowed = append(t.allowed, dst)
+}
+
+func (t *socksDestinationLimiter) Allow(ctx context.Context, req *socks5.Request) (context.Context, bool) {
+	if len(t.allowed) == 0 {
+		return ctx, true
+	}
+
+	dst := fmt.Sprintf("%s:%d", req.DestAddr.IP, req.DestAddr.Port)
+	for _, a := range t.allowed {
+		if a == dst {
+			return ctx, true
+		}
+	}
+
+	return ctx, false
 }
